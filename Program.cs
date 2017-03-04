@@ -21,15 +21,33 @@ public class Fractal{
     Bitmap bmp;
     int iteration = 1;
     int num = 3;
+    double aspectRatioWidth = 1;
     float timer = 3f;
     bool drawing = false;
     Vector2d mandPos = new Vector2d();
     double currZoom = 6.0;
     int mode = 1;
+    bool julia = false;
+    Vector2d juliaPos = new Vector2d();
     int colorMode = 1;
     public Fractal(){
-        canvas = new Canvas(900, 900);
+        int width = 900;
+        int height = 900;
+        Console.WriteLine("Choose window size in pixels. ");
+        Console.WriteLine("Width: ");
+        int.TryParse(Console.ReadLine(), out width);
+        Console.WriteLine("Height: ");
+        int.TryParse(Console.ReadLine(), out height);
+        if(width != height){
+            aspectRatioWidth = ((double)width)/height;
+        }
+        canvas = new Canvas(width, height);
         canvas.ImageCanvasMode();
+        /*width = 7680;
+        height = 4320;
+        aspectRatioWidth = ((double)width)/height;
+        canvas.ImageCanvasMode();
+        canvas.imageCanvas.image = new Bitmap(width, height);*/
         canvas.keyActions.Add(new KeyAction(Key.I, new Action(canvas.MakeImage), KeyActionMode.keyReleased));
         canvas.drawingEnabled = false;
         bmp = canvas.imageCanvas.image;
@@ -51,26 +69,12 @@ public class Fractal{
         drawing = true;
         MandelbrotSet(mandPos.X, mandPos.Y, currZoom);
         drawing = false;
+        //canvas.imageCanvas.image.Save("7680×4320.png");
         canvas.drawingEnabled = true;
         canvas.mouseActions.Add(new MouseAction(MouseButton.Left, new Action(zoomClick)));
         canvas.mouseActions.Add(new MouseAction(MouseButton.Right, new Action(zoomOutClick)));
         canvas.keyActions.Add(new KeyAction(Key.M, new Action(changeMode), KeyActionMode.keyReleased));
         canvas.keyActions.Add(new KeyAction(Key.C, new Action(changeColorMode), KeyActionMode.keyReleased));
-        /*
-        canvas.updateAction = new Action<double>(OnUpdate);
-        Triangle t = new Triangle(15, 15, 85, 15, 50, 85);
-        t.setDrawMode(PolygonMode.Line);
-        canvas.Draw(t);
-        Line l = new Line(0, 50, 37.5f, 60);
-        canvas.Draw(l);
-        s = new Square(15, 75, 25, 85);
-        s.setDrawMode(PolygonMode.Line);
-        canvas.toDraw.Add(s);
-        canvas.keyActions.Add(new KeyAction(Key.H, new Action(Hello), KeyActionMode.keyReleased));
-        //Console.WriteLine(c.color.rDouble + ", " + c.color.bDouble + ", " + c.color.gDouble);
-        //canvas.toDraw.Add(new Square(15, 45, 25, 55));
-        //Console.WriteLine(t.Center().X + ", " + t.Center().Y);
-        */
     }
 
     public void CantorSet(){
@@ -96,8 +100,8 @@ public class Fractal{
 
     public void MandelbrotSet(double posR, double posI, double zoom){
         DateTime d = DateTime.Now;
-        double minR = posR-zoom/2;
-        double maxR = posR+zoom/2;
+        double minR = posR-(zoom*aspectRatioWidth/2);
+        double maxR = posR+(zoom*aspectRatioWidth/2);
         double minI = posI-zoom/2;
         double maxI = posI+zoom/2;
         int maxIterations = 1000;
@@ -132,8 +136,8 @@ public class Fractal{
 
     public void JuliaSet(double mandR, double mandI, double posR, double posI, double zoom){
         DateTime d = DateTime.Now;
-        double minR = posR-zoom/2;
-        double maxR = posR+zoom/2;
+        double minR = posR-(zoom*aspectRatioWidth/2);
+        double maxR = posR+(zoom*aspectRatioWidth/2);
         double minI = posI-zoom/2;
         double maxI = posI+zoom/2;
         int maxIterations = 1000;
@@ -168,8 +172,8 @@ public class Fractal{
 
     public void BurningShip(double posR, double posI, double zoom){
         DateTime d = DateTime.Now;
-        double minR = posR-zoom/2;
-        double maxR = posR+zoom/2;
+        double minR = posR-(zoom*aspectRatioWidth/2);
+        double maxR = posR+(zoom*aspectRatioWidth/2);
         double minI = posI-zoom/2;
         double maxI = posI+zoom/2;
         int maxIterations = 1000;
@@ -207,8 +211,8 @@ public class Fractal{
 
     public void BurningShipJuliaSet(double mandR, double mandI, double posR, double posI, double zoom){
         DateTime d = DateTime.Now;
-        double minR = posR-zoom/2;
-        double maxR = posR+zoom/2;
+        double minR = posR-(zoom*aspectRatioWidth/2);
+        double maxR = posR+(zoom*aspectRatioWidth/2);
         double minI = posI-zoom/2;
         double maxI = posI+zoom/2;
         int maxIterations = 1000;
@@ -245,8 +249,8 @@ public class Fractal{
 
     public void PerpendicularBurningShip(double posR, double posI, double zoom){
         DateTime d = DateTime.Now;
-        double minR = posR-zoom/2;
-        double maxR = posR+zoom/2;
+        double minR = posR-(zoom*aspectRatioWidth/2);
+        double maxR = posR+(zoom*aspectRatioWidth/2);
         double minI = posI-zoom/2;
         double maxI = posI+zoom/2;
         int maxIterations = 1000;
@@ -389,18 +393,24 @@ public class Fractal{
     public void changeMode(){
         if(!drawing){
             drawing = true;
+            julia = false;
             mode++;
             mode %= 4;
             if(mode == 0) mode = 1;
             mandPos = new Vector2d();
             currZoom = 6;
-            if(mode == 1){
-                MandelbrotSet(mandPos.X, mandPos.Y, currZoom);
-            } else if(mode == 2){
-                BurningShip(mandPos.X, mandPos.Y, currZoom);
-            } else if(mode == 3){
-                PerpendicularBurningShip(mandPos.X, mandPos.Y, currZoom);
-            }
+            drawFractal();
+            drawing = false;
+        }
+    }
+
+    public void toJulia(){
+        if(!drawing){
+            drawing = true;
+            julia = true;
+            mandPos = new Vector2d();
+            currZoom = 6;
+            drawFractal();
             drawing = false;
         }
     }
@@ -411,13 +421,7 @@ public class Fractal{
             colorMode++;
             colorMode %= 5;
             if(colorMode == 0) colorMode = 1;
-            if(mode == 1){
-                MandelbrotSet(mandPos.X, mandPos.Y, currZoom);
-            } else if(mode == 2){
-                BurningShip(mandPos.X, mandPos.Y, currZoom);
-            } else if(mode == 3){
-                PerpendicularBurningShip(mandPos.X, mandPos.Y, currZoom);
-            }
+            drawFractal();
             drawing = false;
         }
     }
@@ -425,24 +429,21 @@ public class Fractal{
     public void zoomClick(){
         if(!drawing){
             Vector2i mousePos = canvas.MousePosition();
-            if(mode == 2){
+            if(mousePos.x > canvas.width || mousePos.x < 0 || mousePos.y > canvas.height || mousePos.y < 0){
+                return;
+            }
+            if(mode == 2 && !julia){
             } else{
                 mousePos.y = canvas.height - mousePos.y;
             }
-            double mPosX = MathExtensions.Map(mousePos.x, 0, bmp.Width, mandPos.X - currZoom/2, mandPos.X + currZoom/2);
+            double mPosX = MathExtensions.Map(mousePos.x, 0, bmp.Width, mandPos.X - currZoom*aspectRatioWidth/2, mandPos.X + currZoom*aspectRatioWidth/2);
             double mPosY = MathExtensions.Map(mousePos.y, 0, bmp.Height, mandPos.Y - currZoom/2, mandPos.Y + currZoom/2);
             drawing = true;
             mandPos.X = mPosX;
             mandPos.Y = mPosY;
             currZoom /= 2;
             Console.WriteLine("Position: " + mPosX + " " + mPosY + " Zoom: " + currZoom);
-            if(mode == 1){
-                MandelbrotSet(mandPos.X, mandPos.Y, currZoom);
-            } else if(mode == 2){
-                BurningShip(mandPos.X, mandPos.Y, currZoom);
-            } else if(mode == 3){
-                PerpendicularBurningShip(mandPos.X, mandPos.Y, currZoom);
-            }
+            drawFractal();
             drawing = false;
         }
     }
@@ -450,17 +451,35 @@ public class Fractal{
     public void zoomOutClick(){
         if(!drawing){
             Vector2i mousePos = canvas.MousePosition();
+            if(mousePos.x > canvas.width || mousePos.x < 0 || mousePos.y > canvas.height || mousePos.y < 0){
+                return;
+            }
             if(mode == 2){
             } else{
                 mousePos.y = canvas.height - mousePos.y;
             }
-            double mPosX = MathExtensions.Map(mousePos.x, 0, bmp.Width, mandPos.X - currZoom/2, mandPos.X + currZoom/2);
+            double mPosX = MathExtensions.Map(mousePos.x, 0, bmp.Width, mandPos.X - currZoom*aspectRatioWidth/2, mandPos.X + currZoom*aspectRatioWidth/2);
             double mPosY = MathExtensions.Map(mousePos.y, 0, bmp.Height, mandPos.Y - currZoom/2, mandPos.Y + currZoom/2);
             drawing = true;
             mandPos.X = mPosX;
             mandPos.Y = mPosY;
             currZoom *= 2;
             Console.WriteLine("Position: " + mPosX + " " + mPosY + " Zoom: " + currZoom);
+            drawFractal();
+            drawing = false;
+        }
+    }
+
+    public void drawFractal(){
+        if(julia){
+            if(mode == 1){
+                JuliaSet(juliaPos.X, juliaPos.Y, mandPos.X, mandPos.Y, currZoom);
+            } else if(mode == 2){
+                BurningShipJuliaSet(juliaPos.X, juliaPos.Y, mandPos.X, mandPos.Y, currZoom);
+            } else if(mode == 3){
+                //PerpendicularBSJuliaSet(juliaPos.X, juliaPos.Y, mandPos.X, mandPos.Y, currZoom); //TODO: Implement this!
+            }
+        } else{
             if(mode == 1){
                 MandelbrotSet(mandPos.X, mandPos.Y, currZoom);
             } else if(mode == 2){
@@ -468,7 +487,6 @@ public class Fractal{
             } else if(mode == 3){
                 PerpendicularBurningShip(mandPos.X, mandPos.Y, currZoom);
             }
-            drawing = false;
         }
     }
 
