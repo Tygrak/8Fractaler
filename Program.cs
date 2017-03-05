@@ -33,11 +33,13 @@ public class Fractal{
     public Fractal(){
         int width = 900;
         int height = 900;
+        #if !DEBUG
         Console.WriteLine("Choose window size in pixels. ");
         Console.WriteLine("Width: ");
         int.TryParse(Console.ReadLine(), out width);
         Console.WriteLine("Height: ");
         int.TryParse(Console.ReadLine(), out height);
+        #endif
         if(width != height){
             aspectRatioWidth = ((double)width)/height;
         }
@@ -74,6 +76,7 @@ public class Fractal{
         canvas.mouseActions.Add(new MouseAction(MouseButton.Left, new Action(zoomClick)));
         canvas.mouseActions.Add(new MouseAction(MouseButton.Right, new Action(zoomOutClick)));
         canvas.keyActions.Add(new KeyAction(Key.M, new Action(changeMode), KeyActionMode.keyReleased));
+        canvas.keyActions.Add(new KeyAction(Key.J, new Action(toJulia), KeyActionMode.keyReleased));
         canvas.keyActions.Add(new KeyAction(Key.C, new Action(changeColorMode), KeyActionMode.keyReleased));
     }
 
@@ -284,6 +287,79 @@ public class Fractal{
         Console.WriteLine("Done in: " + (DateTime.Now - d).TotalSeconds.ToString() + " seconds.");
     }
 
+    public void Tricorn(double posR, double posI, double zoom){
+        DateTime d = DateTime.Now;
+        double minR = posR-(zoom*aspectRatioWidth/2);
+        double maxR = posR+(zoom*aspectRatioWidth/2);
+        double minI = posI-zoom/2;
+        double maxI = posI+zoom/2;
+        int maxIterations = 1000;
+        for (int x = 0; x < bmp.Width; x++){
+            double starta = MathExtensions.Map(x, 0, bmp.Width, minR, maxR);
+            //Console.WriteLine(x + " : " + starta.ToString());
+            for (int y = 0; y < bmp.Height; y++){
+                double startb = MathExtensions.Map(y, 0, bmp.Height, minI, maxI);
+                double a = starta;
+                double b = startb;
+                double n = 0;
+                int i = 0;
+                while(n<2 && i < maxIterations){
+                    b = -b;
+                    double a2 = (a*a - b*b);
+                    double b2 = (2*a*b);
+                    i++;
+                    a = a2 + starta;
+                    b = b2 + startb;
+                    n = a + b;
+                }
+                Color c = Color.Black;
+                if(i == maxIterations){
+                    c = Color.Black;
+                } else{
+                    c = colorFromIterations(i, maxIterations);
+                }
+                bmp.SetPixel(x, y, c);
+            }
+        }
+        Console.WriteLine("Done in: " + (DateTime.Now - d).TotalSeconds.ToString() + " seconds.");
+    }
+
+    public void GlitchBrotSet(double posR, double posI, double zoom){
+        DateTime d = DateTime.Now;
+        double minR = posR-(zoom*aspectRatioWidth/2);
+        double maxR = posR+(zoom*aspectRatioWidth/2);
+        double minI = posI-zoom/2;
+        double maxI = posI+zoom/2;
+        int maxIterations = 1000;
+        for (int x = 0; x < bmp.Width; x++){
+            double starta = MathExtensions.Map(x, 0, bmp.Width, minR, maxR);
+            //Console.WriteLine(x + " : " + starta.ToString());
+            for (int y = 0; y < bmp.Height; y++){
+                double startb = MathExtensions.Map(y, 0, bmp.Height, minI, maxI);
+                double a = starta;
+                double b = startb;
+                double n = 0;
+                int i = 0;
+                while(n<2 && i < maxIterations){
+                    double a2 = (a*a - b*b);
+                    double b2 = (2*a*b);
+                    i++;
+                    a = a2 + a + starta;
+                    b = b2 + b + startb;
+                    n = a + b;
+                }
+                Color c = Color.Black;
+                if(i == maxIterations){
+                    c = Color.Black;
+                } else{
+                    c = colorFromIterations(i, maxIterations);
+                }
+                bmp.SetPixel(x, y, c);
+            }
+        }
+        Console.WriteLine("Done in: " + (DateTime.Now - d).TotalSeconds.ToString() + " seconds.");
+    }
+
     public Color colorFromIterationsV1(int iterations, int maxIterations){
         Color c = Color.Black;
         int colorR = (int) MathExtensions.Map(iterations, 0, maxIterations, 0, 765);
@@ -395,7 +471,7 @@ public class Fractal{
             drawing = true;
             julia = false;
             mode++;
-            mode %= 4;
+            mode %= 6;
             if(mode == 0) mode = 1;
             mandPos = new Vector2d();
             currZoom = 6;
@@ -406,8 +482,10 @@ public class Fractal{
 
     public void toJulia(){
         if(!drawing){
+            Console.WriteLine("Generating Julia Set from position: " + mandPos.X + ", " + mandPos.Y);
             drawing = true;
             julia = true;
+            juliaPos = mandPos;
             mandPos = new Vector2d();
             currZoom = 6;
             drawFractal();
@@ -454,7 +532,7 @@ public class Fractal{
             if(mousePos.x > canvas.width || mousePos.x < 0 || mousePos.y > canvas.height || mousePos.y < 0){
                 return;
             }
-            if(mode == 2){
+            if(mode == 2 && !julia){
             } else{
                 mousePos.y = canvas.height - mousePos.y;
             }
@@ -476,8 +554,6 @@ public class Fractal{
                 JuliaSet(juliaPos.X, juliaPos.Y, mandPos.X, mandPos.Y, currZoom);
             } else if(mode == 2){
                 BurningShipJuliaSet(juliaPos.X, juliaPos.Y, mandPos.X, mandPos.Y, currZoom);
-            } else if(mode == 3){
-                //PerpendicularBSJuliaSet(juliaPos.X, juliaPos.Y, mandPos.X, mandPos.Y, currZoom); //TODO: Implement this!
             }
         } else{
             if(mode == 1){
@@ -486,6 +562,10 @@ public class Fractal{
                 BurningShip(mandPos.X, mandPos.Y, currZoom);
             } else if(mode == 3){
                 PerpendicularBurningShip(mandPos.X, mandPos.Y, currZoom);
+            } else if(mode == 4){
+                Tricorn(mandPos.X, mandPos.Y, currZoom);
+            } else if(mode == 5){
+                GlitchBrotSet(mandPos.X, mandPos.Y, currZoom);
             }
         }
     }
