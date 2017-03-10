@@ -53,7 +53,7 @@ public class Fractal{
         canvas.keyActions.Add(new KeyAction(Key.I, new Action(canvas.MakeImage), KeyActionMode.keyReleased));
         canvas.drawingEnabled = false;
         bmp = canvas.imageCanvas.image;
-        canvas.updateAction = new Action<double>(OnUpdate);
+        canvas.updateAction = new Action(OnUpdate);
         //MandelbrotSet(0, 0, 4.2);
         //MandelbrotSet(-0.77, 0.09, 0.12);
         //MandelbrotSet(-0.745, 0.095, 0.01);
@@ -69,7 +69,8 @@ public class Fractal{
         //BurningShipJuliaSet(-1.75, -0.05, 0, 0, 4.2);
         //canvas.drawingEnabled = true;
         drawing = true;
-        MandelbrotSet(mandPos.X, mandPos.Y, currZoom);
+        VerhulstProcess(2,4);
+        //MandelbrotSet(mandPos.X, mandPos.Y, currZoom);
         drawing = false;
         //canvas.imageCanvas.image.Save("7680×4320.png");
         canvas.drawingEnabled = true;
@@ -99,6 +100,27 @@ public class Fractal{
         }
         num *= 3;
         position -= 6;
+    }
+
+    public void VerhulstProcess(double lambda, double zoom){
+        DateTime d = DateTime.Now;
+        double min = lambda-(zoom*aspectRatioWidth/2);
+        double max = lambda+(zoom*aspectRatioWidth/2);
+        //int maxIterations = 1100;
+        for (int i = 0; i < bmp.Width; i++){
+            double startLambda = MathExtensions.Map(i, 0, bmp.Width, min, max);
+            //Console.WriteLine(startLambda);
+            double x = 0.5;
+            for (int j = 0; j < 1200; j++){
+                x = startLambda * x * (1-x);
+                if(j>1000){
+                    int yPos = (int) Math.Round(MathExtensions.Map(x, 0, 1, 0, bmp.Height));
+                    Color c = Color.White;
+                    bmp.SetPixel(i, yPos, c);
+                }
+            }
+        }
+        Console.WriteLine("Done in: " + (DateTime.Now - d).TotalSeconds.ToString() + " seconds.");
     }
 
     public void MandelbrotSet(double posR, double posI, double zoom){
@@ -570,8 +592,8 @@ public class Fractal{
         }
     }
 
-    public void OnUpdate(double deltaTime){
-        timer -= (float) deltaTime;
+    public void OnUpdate(){
+        timer -= (float) canvas.DeltaTime;
         if(timer < 0){
             //CantorSet();
             timer = 3;
